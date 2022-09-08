@@ -23,7 +23,7 @@ const style = {
   textAlign: 'center',
 };
 
-function Calendar() {
+function Calendar({ clients, setClients }) {
   const [list, setList] = useState([]);
   const [openInsert, setOpenInsert] = useState(false);
   const [openUpdate, setOpenUpdate] = useState({
@@ -114,6 +114,8 @@ function Calendar() {
             setOpenInsert={setOpenInsert}
             empInfo={empInfo}
             dateStr={dateStr}
+            clients={clients}
+            setClients={setClients}
           />
         )}
         {/* 수정 */}

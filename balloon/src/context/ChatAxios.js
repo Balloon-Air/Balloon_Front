@@ -213,6 +213,7 @@ export const onHCupdate = async (chatroomId, chatroomName, headCount) => {
     onDeleteRoom(chatroomId);
   }
 };
+
 //이미 생성된 채팅방에서 인원수 +
 export const onHCInvite = async (
   chatroomId,
@@ -233,4 +234,69 @@ export const onExitRoom = async (chatroomId, empId) => {
   axios.delete(`/cre/deleteroom/${chatroomId}/${empId}`).catch((error) => {
     console.log(error);
   });
+};
+
+//////////////////////////////////////////////////////
+//CalendarInsert.js
+
+//chatroomEmployee T에 새로운 값넣고 채팅보내는 부분
+export const onSchUserInvite = async (
+  add,
+  invitepeople,
+  client,
+  calendarBot,
+  newBotroomMsg,
+  botroomMsg
+) => {
+  add.map((add, index) => {
+    console.log(add.chatroomId);
+    axios
+      .post(`/cre/insertchatemp/${add.chatroomId}`, [
+        {
+          empId: {
+            empId: invitepeople[index],
+          },
+          inTime: inTime2,
+        },
+        {
+          empId: {
+            empId: calendarBot,
+          },
+          inTime: inTime2,
+        },
+      ])
+      .then((response) => {
+        console.log(response.data);
+      });
+  });
+  newBotroomMsg(client);
+  botroomMsg(add, client);
+};
+
+//채팅방 만들기
+export const onSchCreateChatroom = async (
+  invitepeople,
+  client,
+  calendarBot,
+  newBotroomMsg,
+  botroomMsg
+) => {
+  let arr = [];
+  invitepeople.map(() => {
+    arr.push({
+      chatroomName: '일정봇',
+      headCount: 1,
+    });
+  });
+  axios.post('/chatroom/createschchatroom', arr).then((response) => {
+    onSchUserInvite(
+      response.data,
+      invitepeople,
+      client,
+      calendarBot,
+      newBotroomMsg,
+      botroomMsg
+    );
+  });
+  return arr;
 };

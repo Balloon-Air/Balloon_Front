@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
 import { getEmpListInSameUnit } from '../../context/EmployeeAxios';
 import {
   chatroomInfo,
@@ -9,12 +7,10 @@ import {
   onHCInvite,
   onUserInvite,
 } from '../../context/ChatAxios';
+import ChatStomp from '../chat/ChatStomp';
 import styles from '../../css/chat/Chat.module.css';
 import { Checkbox } from '@mui/material';
 import { Box, Button, Modal } from '@mui/material';
-
-const sock = new SockJS('http://localhost:8080/chatstart');
-const client = Stomp.over(sock);
 
 function InviteEmp({ style, modalOpen, setModalOpen }) {
   const [chatEmpList, setCEList] = useState([]);
@@ -29,20 +25,8 @@ function InviteEmp({ style, modalOpen, setModalOpen }) {
   const chatroomId = new URL(document.location).searchParams.get('room');
   const [empInfo] = useOutletContext();
   const empId = empInfo.empId;
-
   // socket
-  // const sock = new SockJS('http://localhost:8080/chatstart');
-  // const client = Stomp.over(sock);
-
-  client.connect({}, () => {
-    client.subscribe(`/topic/message`, () => {
-      disconnect();
-    });
-  });
-
-  const disconnect = () => {
-    client.disconnect();
-  };
+  const client = ChatStomp();
 
   ////////////////////////////////////////////////////////////
   //이미 채팅방에 초대 된 사원들 -> existEmp

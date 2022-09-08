@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
 import { onCreateChatroom, onAllChatEmp } from '../../context/ChatAxios';
+import ChatStomp from '../chat/ChatStomp';
 import styles from '../../css/chat/Chat.module.css';
 import Input from '@mui/material/Input';
 import Button from '@mui/material/Button';
@@ -21,27 +20,13 @@ const styleBox = {
   padding: 4,
 };
 
-const sock = new SockJS('http://localhost:8080/chatstart');
-const client = Stomp.over(sock);
-
 function CreateChatroom({ invite, openCreatChat, setopenCreatChat }) {
   const inputRef = useRef();
   const [empInfo] = useOutletContext();
   const empId = empInfo.empId;
   const [allChatEmp, setAllChatEmp] = useState([]);
   // socket
-  // const sock = new SockJS('http://localhost:8080/chatstart');
-  // const client = Stomp.over(sock);
-
-  client.connect({}, () => {
-    client.subscribe(`/topic/message`, () => {
-      disconnect();
-    });
-  });
-
-  const disconnect = () => {
-    client.disconnect();
-  };
+  const client = ChatStomp();
 
   const keyEnter = (e) => {
     if (e.key === 'Enter') {
@@ -117,7 +102,6 @@ function CreateChatroom({ invite, openCreatChat, setopenCreatChat }) {
         <div>
           <Input
             id="chatroomName"
-            // className={styles.inBox}
             ref={inputRef}
             onKeyPress={keyEnter}
             placeholder="채팅방 이름을 입력하세요"

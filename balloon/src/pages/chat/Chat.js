@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
 import styles from '../../css/chat/Chat.module.css';
-import { Link, useOutletContext, useParams } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import ScrollToBottom from 'react-scroll-to-bottom';
 import SendIcon from '@mui/icons-material/Send';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -21,33 +19,28 @@ import {
   chatRecord,
   chatroomInfo,
   empIdInfo,
-  onExitRoom,
-  onHCupdate,
   onUserUpdate,
 } from '../../context/ChatAxios';
-
-import { sendExit } from '../../utils/ChatUtils';
-
+import ChatStomp from '../chat/ChatStomp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-
 import ChatSide from './ChatSide';
 import InviteEmp from './InviteEmp';
+import ExitChatroom from './ExitChatroom';
 
-// const sock = new SockJS('http://localhost:8080/chatstart');
-// const client = Stomp.over(sock);
 function Chat() {
   const [empInfo] = useOutletContext();
   const empId = empInfo.empId;
   const chatroomId = new URL(document.location).searchParams.get('room');
   const [input, setInput] = useState([]);
   const inputRef = useRef();
-  const sock = new SockJS('http://localhost:8080/chatstart');
-  const client = Stomp.over(sock);
   const [modalOpen, setModalOpen] = useState(false);
+  // socket
+  const client = ChatStomp();
+
   //채팅방 채팅기록
   const [chatting, setChatting] = useState([]);
 
@@ -66,11 +59,17 @@ function Chat() {
   const [chatRoomTitle, setChatRoomTitle] = useState(chatroomName);
   const [clickChk, setClickChk] = useState(0);
 
+  //채팅방 나가기 모달
+  const [openExitChat, setOpenExitChat] = useState(false);
+
+  //삭제확인알림창
+  const eventClickHandle = () => {
+    setOpenExitChat(true);
+  };
+
   const handleClick = () => {
     setOpen(!open);
   };
-
-  console.log(input);
 
   const style = {
     position: 'absolute',
@@ -137,7 +136,6 @@ function Chat() {
 
   const onClickChatRoomTitle = () => {
     setClickChk(clickChk + 1);
-    console.log(clickChk);
     if (clickChk > 1) {
       setClickChk(0);
     }
@@ -149,16 +147,6 @@ function Chat() {
       onChangeTitle();
     }
   };
-
-  //////////////////////////////////////////////////
-  // 채팅내용 검색 - 지우지마세요!!!!!!!!!!!!! 추후구현
-  // const [chatSearch, setChatSearch] = useState('');
-  // const onChangeSearch = (e) => {
-  //   setChatSearch(e.target.value);
-  // };
-  // const filterChatting = () => {
-  //   chatting.filter((chat) => chat.chatContent.includes(chatSearch));
-  // };
 
   return (
     <Container maxWidth="xs" className={styles.Listcontainer}>
@@ -240,29 +228,37 @@ function Chat() {
                 })}
               {/* 채팅방 나가기 */}
               <div className={styles.logoutBtn}>
-                <Link to={'/chatlist'}>
-                  <Button
-                    onClick={() => (
-                      onExitRoom(
-                        chatroomId,
-                        empId,
-                        sendExit(client, chatroomId, empInfo)
-                      ),
-                      onHCupdate(chatroomId, chatroomName, headCount)
-                    )}>
-                    <LogoutIcon />
-                  </Button>
-                </Link>
+                {/* 사원추가 */}
+                <Button
+                  onClick={() => {
+                    setModalOpen(true);
+                  }}>
+                  <PersonAddAlt1Icon />
+                </Button>
+                <Button
+                  variant="text"
+                  disableElevation
+                  onClick={(e) => {
+                    const eventExit = () => {
+                      e.preventDefault();
+                      eventClickHandle();
+                    };
+                    return eventExit();
+                  }}>
+                  <LogoutIcon />
+                </Button>
+                {openExitChat && (
+                  <ExitChatroom
+                    openExitChat={openExitChat}
+                    setOpenExitChat={setOpenExitChat}
+                    chatroomId={chatroomId}
+                    chatroomName={chatroomName}
+                    headCount={headCount}
+                  />
+                )}
               </div>
             </Collapse>
           </List>
-          {/* 사원추가 */}
-          <Button
-            onClick={() => {
-              setModalOpen(true);
-            }}>
-            <PersonAddAlt1Icon />
-          </Button>
           {modalOpen && (
             <InviteEmp
               style={style}
@@ -303,7 +299,7 @@ function Chat() {
                 let endValue = scheduleContent.endvalue.replace('T', ' ');
                 return (
                   <>
-                    <div key={index} className={styles.othermessage}>
+                    <div className={styles.othermessage}>
                       <div>{msg.employee.empName}</div>
                       <div className={styles.scheduleContent}>
                         <div>일정제목 : {scheduleContent.scheduletitle}</div>
@@ -311,6 +307,10 @@ function Chat() {
                         <div>장소 : {scheduleContent.CalendarLocation}</div>
                         <div>시작일자 : {startValue}</div>
                         <div>종료일자 : {endValue}</div>
+                        <div>
+                          보낸사람 : {scheduleContent.empName}
+                          {scheduleContent.position}
+                        </div>
                       </div>
                       <div className={styles.time}>{chatTime}</div>
                     </div>
@@ -335,9 +335,19 @@ function Chat() {
                 endIcon={<SendIcon />}
                 className={styles.inputbutton}
                 onClick={() => {
+                  // chatempinfo.map((data) => {
+                  //   console.log(data);
+                  //   if (
+                  //     data.chatroomId.chatroomName &&
+                  //     data.chatroomId.chatroomName === '일정봇'
+                  //   ) {
+                  //     alert('메세지를 입력할 수 없습니다');
+                  //   } else {
                   inputRef.current.value && send();
                   inputRef.current.focus();
                   inputRef.current.value = '';
+                  //   }
+                  // });
                 }}>
                 전송
               </Button>

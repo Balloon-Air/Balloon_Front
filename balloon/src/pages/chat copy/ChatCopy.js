@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
 import ScrollToBottom from 'react-scroll-to-bottom';
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
+import ChatStomp from '../chat/ChatStomp';
 import InviteEmpCopy from './InviteEmpCopy';
 import { sendExit } from '../../utils/ChatUtils';
 import {
@@ -30,19 +28,47 @@ import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
+import ExitChatroom from '../chat/ExitChatroom';
+import InviteEmp from '../chat/InviteEmp';
+import { style } from '@mui/system';
 
 function ChatCopy({ empInfo, roomId, setChatStatus }) {
   const empId = empInfo.empId;
   const chatroomId = roomId;
   const [input, setInput] = useState([]);
   const inputRef = useRef();
-  const sock = new SockJS('http://localhost:8080/chatstart');
-  const client = Stomp.over(sock);
-  // const sock = new SockJS('http://15.164.224.26:8080/chatstart');
-  // const client = Stomp.over(sock);
+  // socket
+  const client = ChatStomp();
+
+  console.log(roomId);
 
   //채팅방 사람 확인 state
   const [open, setOpen] = useState(false);
+
+  //채팅방 채팅기록
+  const [chatting, setChatting] = useState([]);
+
+  //채팅방 정보 불러오기
+  const [chatroomName, setChatroomName] = useState('');
+  const [headCount, setHeadCount] = useState(0);
+
+  //chatroomEmployee T에 chatroomId로 사원정보 가져오기
+  //채팅방에 어떤사람이 남아있는지 알려주기 위해서
+  const [chatempinfo, setChatempinfo] = useState([]);
+
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // 채팅방 이름 바꾸기
+  const [chatRoomTitle, setChatRoomTitle] = useState(chatroomName);
+  const [clickChk, setClickChk] = useState(0);
+
+  //채팅방 나가기 모달
+  const [openExitChat, setOpenExitChat] = useState(false);
+
+  //삭제확인알림창
+  const eventClickHandle = () => {
+    setOpenExitChat(true);
+  };
 
   const handleClick = () => {
     setOpen(!open);
@@ -87,49 +113,31 @@ function ChatCopy({ empInfo, roomId, setChatStatus }) {
     }
   };
 
-  //채팅방 채팅기록
-  const [chatting, setChatting] = useState([]);
+  //엔터키
+  const onKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      send();
+      inputRef.current.value = '';
+    }
+  };
 
-  //채팅방 정보 불러오기
-  const [chatroomName, setChatroomName] = useState('');
-  const [headCount, setHeadCount] = useState(0);
-
-  //chatroomEmployee T에 chatroomId로 사원정보 가져오기
-  //채팅방에 어떤사람이 남아있는지 알려주기 위해서
-  const [chatempinfo, setChatempinfo] = useState([]);
-
-  const [modalOpen, setModalOpen] = useState(false);
-
-  // 채팅방 이름 바꾸기
-  const [chatRoomTitle, setChatRoomTitle] = useState(chatroomName);
-  const [clickChk, setClickChk] = useState(0);
-
+  //chatroom에 들어갔을 때 기록남게
   useEffect(() => {
     if (!!chatroomId) {
       empIdInfo(chatroomId, setChatempinfo);
     }
-    //chatroom에 들어갔을 때 기록남게
     chatRecord2(chatroomId, setChatting, empId);
     chatroomInfo(chatroomId, setChatroomName, setHeadCount);
-  }, [chatroomId, input, chatting.length]);
+  }, [input, chatroomId, chatting.length]);
 
-  useEffect(() => {
-    setChatRoomTitle(chatroomName);
-  }, [chatroomName]);
-
-  useEffect(() => {
-    setClickChk(clickChk);
-  }, [clickChk]);
-
-  useEffect(() => {
-    if (chatempinfo.length !== 0) {
-      // empIdInfo(chatroomId, setChatempinfo);
-    }
-  }, [chatempinfo]);
-
+  //채팅방 이름수정
   const onChangeTitle = (event) => {
     setChatRoomTitle(event.target.value);
   };
+  useEffect(() => {
+    setChatRoomTitle(chatroomName);
+    setClickChk(clickChk);
+  }, [chatroomName, clickChk]);
 
   const onClickChatRoomTitle = () => {
     setClickChk(clickChk + 1);
@@ -138,23 +146,18 @@ function ChatCopy({ empInfo, roomId, setChatStatus }) {
     }
   };
 
-  //엔터키
-  const chatEnter = (e) => {
-    if (e.key === 'Enter') {
-      send();
-      inputRef.current.value = '';
+  // useEffect(() => {
+  //   if (chatempinfo.length !== 0) {
+  // empIdInfo(chatroomId, setChatempinfo);
+  //   }
+  // }, [chatempinfo]);
+
+  const keyEnter = (e) => {
+    if (e.key == 'Enter') {
+      setClickChk(0);
+      onChangeTitle();
     }
   };
-
-  //////////////////////////////////////////////////
-  // 채팅내용 검색 - 지우지마세요!!!!!!!!!!!!! 추후구현
-  // const [chatSearch, setChatSearch] = useState('');
-  // const onChangeSearch = (e) => {
-  //   setChatSearch(e.target.value);
-  // };
-  // const filterChatting = () => {
-  //   chatting.filter((chat) => chat.chatContent.includes(chatSearch));
-  // };
 
   return (
     <div className={styles.chatconvimeline}>
@@ -177,6 +180,7 @@ function ChatCopy({ empInfo, roomId, setChatStatus }) {
               }}
               value={chatRoomTitle}
               onChange={onChangeTitle}
+              onKeyPress={keyEnter}
               onClick={onClickChatRoomTitle}
             />
             {clickChk == 2 ? (
@@ -237,25 +241,36 @@ function ChatCopy({ empInfo, roomId, setChatStatus }) {
             })}
           {/* 채팅방 나가기 */}
           <div className={styles.logoutBtn}>
+            {/* 사원추가 */}
             <Button
               onClick={(e) => {
+                e.preventDefault();
                 setModalOpen(true);
               }}>
               <PersonAddAlt1Icon />
             </Button>
 
             <Button
-              onClick={() => (
-                onExitRoom(
-                  chatroomId,
-                  empId,
-                  sendExit(client, chatroomId, empInfo)
-                ),
-                onHCupdate(chatroomId, chatroomName, headCount),
-                setChatStatus('chatEmpList')
-              )}>
+              variant="text"
+              disableElevation
+              onClick={(e) => {
+                const eventExit = () => {
+                  e.preventDefault();
+                  eventClickHandle();
+                };
+                return eventExit();
+              }}>
               <LogoutIcon />
             </Button>
+            {openExitChat && (
+              <ExitChatroom
+                openExitChat={openExitChat}
+                setOpenExitChat={setOpenExitChat}
+                chatroomId={chatroomId}
+                chatroomName={chatroomName}
+                headCount={headCount}
+              />
+            )}
           </div>
         </Collapse>
       </List>
@@ -329,12 +344,11 @@ function ChatCopy({ empInfo, roomId, setChatStatus }) {
 
       <div className={styles.scroll}>
         <div className={styles.contain}></div>
-
         <div className={styles.inputmain}>
           <input
             className={styles.inputform}
             ref={inputRef}
-            onKeyPress={chatEnter}
+            onKeyPress={onKeyPress}
             placeholder="메시지를 입력하세요"
           />
 

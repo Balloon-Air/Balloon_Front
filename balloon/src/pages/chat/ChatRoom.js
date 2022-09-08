@@ -1,27 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
-import Stomp from 'stompjs';
-import SockJS from 'sockjs-client';
 import ChatSide from './ChatSide';
-import { sendExit } from '../../utils/ChatUtils';
-import { onChatroom, onExitRoom, onHCupdate } from '../../context/ChatAxios';
+import { onChatroom } from '../../context/ChatAxios';
 import styles from '../../css/chat/Chat.module.css';
+
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Container } from '@mui/system';
-
-//socket
-const sock = new SockJS('http://localhost:8080/chatstart');
-const client = Stomp.over(sock);
+import ExitChatroom from './ExitChatroom';
 
 function ChatRoom() {
   const [chatroom, setChatroom] = useState([]);
+  //채팅방 나가기 모달
+  const [openExitChat, setOpenExitChat] = useState(false);
   const [empInfo] = useOutletContext();
   const empId = empInfo.empId;
-  //socket
-  // const sock = new SockJS('http://localhost:8080/chatstart');
-  // const client = Stomp.over(sock);
 
   //마지막으로 보낸 채팅list가져오기
   useEffect(() => {
@@ -29,6 +23,11 @@ function ChatRoom() {
       onChatroom(setChatroom, empId);
     }
   }, [empId]);
+
+  //삭제확인알림창
+  const eventClickHandle = () => {
+    setOpenExitChat(true);
+  };
 
   return (
     <Container maxWidth="xs" className={styles.Listcontainer}>
@@ -60,36 +59,29 @@ function ChatRoom() {
                             </span>
                           </div>
                         )}
-
                         <div className={styles.DeleteBtn}>
                           <Button
                             variant="text"
                             disableElevation
                             onClick={(e) => {
-                              const roomDelete = () => {
+                              const eventExit = () => {
                                 e.preventDefault();
-                                onExitRoom(
-                                  chat.chatroom.chatroomId,
-                                  empInfo.empId,
-                                  sendExit(
-                                    client,
-                                    chat.chatroom.chatroomId,
-                                    empInfo
-                                  ),
-                                  onHCupdate(
-                                    chat.chatroom.chatroomId,
-                                    chat.chatroom.chatroomName,
-                                    chat.chatroom.headCount
-                                  )
-                                );
-
-                                window.location.href = '/chatlist';
+                                eventClickHandle();
                               };
 
-                              return roomDelete();
+                              return eventExit();
                             }}>
                             <DeleteIcon />
                           </Button>
+                          {openExitChat && (
+                            <ExitChatroom
+                              openExitChat={openExitChat}
+                              setOpenExitChat={setOpenExitChat}
+                              chatroomId={chat.chatroom.chatroomId}
+                              chatroomName={chat.chatroom.chatroomName}
+                              headCount={chat.chatroom.headCount}
+                            />
+                          )}
                         </div>
                         <div className={styles.content}>
                           {chat.chatContent.length <= '15' ? (

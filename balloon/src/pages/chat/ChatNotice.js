@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
-import Stomp from 'stompjs';
-import SockJS from 'sockjs-client';
 import ChatSide from './ChatSide';
 import { onChatroom, onExitRoom } from '../../context/ChatAxios';
 import { sendExit } from '../../utils/ChatUtils';
+import ChatStomp from '../chat/ChatStomp';
 import styles from '../../css/chat/Chat.module.css';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -15,8 +14,8 @@ function ChatNotice() {
   const [chatroom, setChatroom] = useState([]);
   const [empInfo] = useOutletContext();
   const empId = empInfo.empId;
-  const sock = new SockJS('http://localhost:8080/chatstart');
-  const client = Stomp.over(sock);
+  // socket
+  const client = ChatStomp();
 
   //마지막으로 보낸 채팅list가져오기
   useEffect(() => {

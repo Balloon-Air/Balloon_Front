@@ -8,22 +8,30 @@ import AddCommentIcon from '@mui/icons-material/AddComment';
 import CRCopy from './CRCopy';
 
 export default function CECopy({ open, setOpen, empInfo }) {
-  const handleClose = () => setOpen(false);
+  // const handleClose = () => setOpen(false);
+  //채팅할사원
   const [chatEmpList, setCEList] = useState([]);
+  //조직이름
   const [chatUnitList, setCUList] = useState([]);
+  //채팅방모달
   const [openCreatChat, setopenCreatChat] = useState(false);
+  //초대할 사원
   const [invite, setInvite] = useState([]);
+  //로그인 한 사원아이디
   const empId = empInfo.empId;
-  const [chatStatus, setChatStatus] = useState('chatEmpList');
-  const returnArr = (list, setCUList) => {
-    const arr = [];
 
-    list.map((row) => {
-      return arr.push(row.unit.unitName);
+  const [chatStatus, setChatStatus] = useState('chatEmpList');
+
+  //로그인 한 사원이 속한 조직빼오기
+  const returnUnit = (chatEmpList, setCUList) => {
+    const unitname = [];
+
+    chatEmpList.map((row) => {
+      return unitname.push(row.unit.unitName);
     });
 
-    const array = arr.filter((row, index) => {
-      return arr.indexOf(row) === index;
+    const array = unitname.filter((row, index) => {
+      return unitname.indexOf(row) === index;
     });
 
     return setCUList(array);
@@ -38,11 +46,11 @@ export default function CECopy({ open, setOpen, empInfo }) {
           getEmpListInSameUnit(empId, setCEList);
         } else {
           setCUList(chatEmpList.unit);
-          returnArr(chatEmpList, setCUList);
+          returnUnit(chatEmpList, setCUList);
         }
       }
     }
-  }, [empId, chatEmpList, chatUnitList]);
+  }, [empId, chatEmpList, chatUnitList, chatStatus]);
 
   //초대할 사원을 담아두는 메소드
   const onInvite = (checked, data) => {
@@ -53,6 +61,7 @@ export default function CECopy({ open, setOpen, empInfo }) {
     }
   };
 
+  //사원 미선택 시 알림창
   const eventClickHandle = () => {
     if (invite.length === 0) {
       alert('사원을 선택해주세요!!');
@@ -62,7 +71,7 @@ export default function CECopy({ open, setOpen, empInfo }) {
     }
   };
 
-  useEffect(() => {}, [chatStatus]);
+  // useEffect(() => {}, [chatStatus]);
   return (
     <div>
       {/* <Button onClick={handleOpen}>Open modal</Button> */}
@@ -111,9 +120,6 @@ export default function CECopy({ open, setOpen, empInfo }) {
                           if (ce.unit.unitName === cu) {
                             return (
                               <div key={index} className={styles.fontlist}>
-                                {/* <img src={ce.photo} alt="사원 이미지" /> */}
-                                {/* <div className={styles.liststyle}> */}
-                                {/* <div className={styles.li}> */}
                                 {ce.empName} {ce.position}
                                 <Checkbox
                                   type="checkbox"
@@ -122,7 +128,6 @@ export default function CECopy({ open, setOpen, empInfo }) {
                                   }}
                                   checked={invite.includes(ce) ? true : false}
                                 />
-                                {/* <span>{ce.position}</span> */}
                               </div>
                             );
                           }

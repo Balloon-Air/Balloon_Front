@@ -16,51 +16,52 @@ export default function Test({ open, setOpen, empInfo }) {
   const [invite, setInvite] = useState([]);
   const empId = empInfo.empId;
   const [chatStatus, setChatStatus] = useState('chatEmpList');
-  const returnArr = (list, setCUList) => {
-    const arr = [];
 
-    list.map((row) => {
-      return arr.push(row.unit.unitName);
-    });
+  // const returnArr = (list, setCUList) => {
+  //   const arr = [];
 
-    const array = arr.filter((row, index) => {
-      return arr.indexOf(row) === index;
-    });
+  //   list.map((row) => {
+  //     return arr.push(row.unit.unitName);
+  //   });
 
-    return setCUList(array);
-  };
+  //   const array = arr.filter((row, index) => {
+  //     return arr.indexOf(row) === index;
+  //   });
+
+  //   return setCUList(array);
+  // };
 
   // 사원list 출력하기
-  useEffect(() => {
-    setInvite([]);
-    if (!!empId) {
-      if (chatUnitList.length === 0) {
-        if (chatEmpList.length === 0) {
-          getEmpListInSameUnit(empId, setCEList);
-        } else {
-          setCUList(chatEmpList.unit);
-          returnArr(chatEmpList, setCUList);
-        }
-      }
-    }
-  }, [empId, chatEmpList, chatUnitList]);
+  // useEffect(() => {
+  //   setInvite([]);
+  //   if (!!empId) {
+  //     if (chatUnitList.length === 0) {
+  //       if (chatEmpList.length === 0) {
+  //         getEmpListInSameUnit(empId, setCEList);
+  //       } else {
+  //         setCUList(chatEmpList.unit);
+  //         returnArr(chatEmpList, setCUList);
+  //       }
+  //     }
+  //   }
+  // }, [empId, chatEmpList, chatUnitList]);
 
   //초대할 사원을 담아두는 메소드
-  const onInvite = (checked, data) => {
-    if (checked) {
-      setInvite([...invite, data]);
-    } else {
-      setInvite(invite.filter((button) => button !== data));
-    }
-  };
+  // const onInvite = (checked, data) => {
+  //   if (checked) {
+  //     setInvite([...invite, data]);
+  //   } else {
+  //     setInvite(invite.filter((button) => button !== data));
+  //   }
+  // };
 
-  const eventClickHandle = () => {
-    if (invite.length === 0) {
-      alert('사원을 선택해주세요!!');
-    } else {
-      setopenCreatChat(true);
-    }
-  };
+  // const eventClickHandle = () => {
+  //   if (invite.length === 0) {
+  //     alert('사원을 선택해주세요!!');
+  //   } else {
+  //     setopenCreatChat(true);
+  //   }
+  // };
 
   useEffect(() => {}, [chatStatus]);
 
@@ -77,7 +78,7 @@ export default function Test({ open, setOpen, empInfo }) {
             style={{
               fontSize: '18px',
               marginLeft: '20px',
-              color: 'red',
+              color: 'black',
             }}>
             메신저
           </span>
@@ -94,7 +95,7 @@ export default function Test({ open, setOpen, empInfo }) {
             ) : chatStatus === 'chatList' ? (
               <CRMCopy empInfo={empInfo} setChatStatus={setChatStatus} />
             ) : chatStatus === 'chatNotice' ? (
-              <CNCopy setChatStatus={setChatStatus} empInfo={empInfo} />
+              <CNCopy empInfo={empInfo} setChatStatus={setChatStatus} />
             ) : (
               ''
             )}

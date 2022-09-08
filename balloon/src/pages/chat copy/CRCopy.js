@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
+import ChatStomp from '../chat/ChatStomp';
 import { onCreateChatroom2, onAllChatEmp } from '../../context/ChatAxios';
 import styles from '../../css/chat/ChatCopy.module.css';
 import Input from '@mui/material/Input';
@@ -28,28 +27,17 @@ function CRCopy({
   setChatStatus,
 }) {
   const inputRef = useRef();
-  // const sock = new SockJS('http://15.164.224.26:8080/chatstart');
-  const sock = new SockJS('http://localhost:8080/chatstart');
-  const client = Stomp.over(sock);
-
-  client.connect({}, () => {
-    client.subscribe(`/topic/message`, (data) => {
-      disconnect();
-    });
-  });
-
-  const disconnect = () => {
-    client.disconnect();
-  };
+  //로그인한 사원ID
+  const empId = empInfo.empId;
+  const [allChatEmp, setAllChatEmp] = useState([]);
+  // socket
+  const client = ChatStomp();
 
   const keyEnter = (e) => {
     if (e.key === 'Enter') {
       eventChatHandle();
     }
   };
-  useEffect(() => {
-    onAllChatEmp(setAllChatEmp, empInfo.empId);
-  }, []);
 
   //초대할 사원
   const alreadyInvite = [];
@@ -57,9 +45,12 @@ function CRCopy({
     alreadyInvite.push(vite.empId);
   });
 
-  const [allChatEmp, setAllChatEmp] = useState([]);
+  //headCount가 2인 chatroomEmployee T 정보 가져옴
+  useEffect(() => {
+    onAllChatEmp(setAllChatEmp, empId);
+  }, []);
 
-  useEffect(() => {}, [openCreatChat]);
+  // useEffect(() => {}, [openCreatChat]);
 
   //1:1채팅일 때 이미있는 채팅방 예외처리
   const checkChatEmp = (allChatEmp, alreadyInvite) => {
@@ -72,8 +63,6 @@ function CRCopy({
     });
     return check;
   };
-
-  const handleClose = () => setopenCreatChat(false);
 
   //채팅방이름 공백처리
   //1:1채팅일 때 이미있는 채팅방 예외처리
@@ -114,6 +103,9 @@ function CRCopy({
       alert('채팅방 이름을 입력해주세요!!');
     }
   };
+
+  //채팅방모달
+  const handleClose = () => setopenCreatChat(false);
 
   return (
     <Modal open={openCreatChat} onClose={handleClose}>

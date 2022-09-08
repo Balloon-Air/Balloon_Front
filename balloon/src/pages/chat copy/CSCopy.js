@@ -19,16 +19,16 @@ function CSCopy({ children, setChatStatus }) {
           <li
             className={styles.listyle}
             onClick={() => setChatStatus('chatList')}>
-            <Badge
+            {/* <Badge
               anchorOrigin={{
                 vertical: 'top',
                 horizontal: 'left',
               }}
               color="secondary"
               badgeContent={501}
-              max={500}>
-              <ChatIcon fontSize="large" />
-            </Badge>
+              max={500}> */}
+            <ChatIcon fontSize="large" />
+            {/* </Badge> */}
           </li>
           <li
             className={styles.listyle}

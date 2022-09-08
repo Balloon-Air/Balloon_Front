@@ -124,7 +124,7 @@
 
 .chatroomname {
   text-align: center;
-  background-color: rgb(255, 205, 212);
+  background-color: #a4c4ee;
 }
 
 .chatconvimeline {
@@ -289,11 +289,18 @@
 }
 
 .scheduleContent {
-  background-color: rgb(249, 255, 205);
+  border: 1px solid navy;
+  background-color: #e4f3fa;
   margin-right: 5px;
-  border-radius: 15px;
+  border-radius: 10px;
   left: 0;
   right: 0;
   bottom: -16px;
   word-break: break-all;
+  font-weight: bold;
+}
+
+.th {
+  background-color: #c9e3ff;
+  border-radius: 10px;
 }

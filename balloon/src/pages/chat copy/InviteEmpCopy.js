@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
+import ChatStomp from '../chat/ChatStomp';
 import { getEmpListInSameUnit } from '../../context/EmployeeAxios';
 import {
   chatroomInfo,
@@ -28,24 +27,11 @@ function InviteEmpCopy({
   //채팅방 정보 불러오기
   const [chatroomName, setChatroomName] = useState('');
   const [headCount, setHeadCount] = useState(0);
-  // const [chatempinfo, setChatempinfo] = useState([]);
   const [chatAddEmpInfo, setChatAddEmpInfo] = useState([]);
   const empId = empInfo.empId;
 
   // socket
-  const sock = new SockJS('http://localhost:8080/chatstart');
-  //   const sock = new SockJS('http://15.164.224.26:8080/chatstart');
-  const client = Stomp.over(sock);
-
-  client.connect({}, () => {
-    client.subscribe(`/topic/message`, (data) => {
-      disconnect();
-    });
-  });
-
-  const disconnect = () => {
-    client.disconnect();
-  };
+  const client = ChatStomp();
 
   ////////////////////////////////////////////////////////////
   //이미 채팅방에 초대 된 사원들 -> existEmp
@@ -75,6 +61,12 @@ function InviteEmpCopy({
     }
   };
 
+  //채팅방에 없는 사원list
+  const ChatEmpHandle = (chatEmpList, setECEList) => {
+    const arr = chatEmpList.filter((list) => !existEmp.includes(list.empId));
+    setECEList(arr);
+  };
+
   useEffect(() => {
     if (!!chatroomId) {
       //사원정보가져오기
@@ -88,18 +80,11 @@ function InviteEmpCopy({
         } else {
           setCUList(chatEmpList.unit);
           returnArr(chatEmpList, setCUList);
-
           ChatEmpHandle(chatEmpList, setECEList);
         }
       }
     }
   }, [chatroomId, chatEmpList, empId, chatUnitList, existChatEmp]);
-
-  //채팅방에 없는 사원list
-  const ChatEmpHandle = (chatEmpList, setECEList) => {
-    const arr = chatEmpList.filter((list) => !existEmp.includes(list.empId));
-    setECEList(arr);
-  };
 
   const closemodal = () => {
     setModalOpen(false);
